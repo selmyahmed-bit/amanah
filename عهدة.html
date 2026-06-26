@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>متابعة العهد</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f5f5f0;--card:#fff;--accent:#1a56db;--accent2:#0e9f6e;--danger:#e02424;
+    --text:#111827;--muted:#6b7280;--border:#e5e7eb;
+    --green-bg:#ecfdf5;--green-text:#065f46;--red-bg:#fef2f2;--red-text:#991b1b;
+    --blue-bg:#eff6ff;--blue-text:#1e40af;--shadow:0 1px 3px rgba(0,0,0,0.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:100px;}
+  header{background:var(--accent);color:white;padding:18px 20px 14px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(26,86,219,0.3);display:flex;justify-content:space-between;align-items:center;}
+  header h1{font-size:20px;font-weight:700;}
+  header p{font-size:12px;opacity:0.8;margin-top:2px;}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:#fbbf24;flex-shrink:0;}
+  .sync-dot.green{background:#34d399;}
+  .back-btn{background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;cursor:pointer;display:none;}
+
+  /* SCREENS */
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  /* HOME */
+  .home-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:16px;}
+  .sum-card{background:var(--card);border-radius:14px;padding:12px 10px;text-align:center;box-shadow:var(--shadow);}
+  .sum-card .label{font-size:11px;color:var(--muted);margin-bottom:4px;}
+  .sum-card .value{font-size:16px;font-weight:700;}
+  .sum-card.green .value{color:var(--green-text);}
+  .sum-card.red .value{color:var(--red-text);}
+  .sum-card.blue .value{color:var(--blue-text);}
+  .sum-card.orange .value{color:#92400e;}
+
+  .section-title{font-size:14px;font-weight:600;color:var(--muted);padding:0 16px;margin-bottom:10px;}
+  .amanat-list{padding:0 16px;}
+  .amanah-card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:transform 0.15s;}
+  .amanah-card:active{transform:scale(0.98);}
+  .amanah-name{font-size:16px;font-weight:700;margin-bottom:4px;}
+  .amanah-meta{font-size:12px;color:var(--muted);}
+  .amanah-rasid{text-align:left;}
+  .amanah-rasid .rlabel{font-size:11px;color:var(--muted);margin-bottom:2px;}
+  .amanah-rasid .rval{font-size:17px;font-weight:700;}
+  .rval.pos{color:var(--blue-text);}
+  .rval.neg{color:var(--red-text);}
+  .amanah-arrow{font-size:18px;color:var(--muted);margin-right:8px;}
+
+  .add-amanah-card{background:var(--card);border-radius:14px;padding:16px;margin:0 16px;box-shadow:var(--shadow);}
+  .add-amanah-card h2{font-size:14px;font-weight:600;color:var(--muted);margin-bottom:12px;}
+  .field label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
+  .field input,.field select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--text);background:#fafafa;-webkit-appearance:none;appearance:none;}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--accent);background:white;}
+  .btn-primary{width:100%;padding:13px;background:var(--accent);color:white;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px;}
+  .btn-primary:active{opacity:0.85;}
+
+  .empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;}
+
+  /* DETAIL */
+  .detail-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px;}
+  .form-card{background:var(--card);margin:0 16px 16px;border-radius:16px;padding:16px;box-shadow:var(--shadow);}
+  .form-card h2{font-size:14px;font-weight:600;color:var(--muted);margin-bottom:12px;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .form-row.full{grid-template-columns:1fr;}
+  .btn-today{padding:9px 11px;background:var(--blue-bg);color:var(--blue-text);border:1.5px solid #bfdbfe;border-radius:10px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .btn-row{display:flex;gap:8px;margin-top:4px;}
+  .btn-add{flex:1;padding:13px;background:var(--accent);color:white;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
+  .btn-cancel-edit{padding:13px 16px;background:#f3f4f6;color:var(--muted);border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+  .entries-section{padding:0 16px;}
+  .entries-section h2{font-size:14px;font-weight:600;color:var(--muted);margin-bottom:10px;}
+  .entry-card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow);animation:fadeIn 0.25s ease;}
+  .entry-card.editing{border:2px solid var(--accent);}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .entry-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+  .entry-bayan{font-size:15px;font-weight:600;flex:1;}
+  .entry-date{font-size:12px;color:var(--muted);margin-top:2px;}
+  .entry-actions{display:flex;gap:6px;flex-shrink:0;}
+  .btn-del{background:var(--red-bg);border:none;border-radius:8px;padding:6px 10px;color:var(--danger);font-size:15px;cursor:pointer;}
+  .btn-edit-e{background:var(--blue-bg);border:none;border-radius:8px;padding:6px 10px;color:var(--blue-text);font-size:15px;cursor:pointer;}
+  .entry-amounts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+  .amount-box{border-radius:10px;padding:8px 10px;text-align:center;}
+  .amount-box .alabel{font-size:11px;margin-bottom:2px;}
+  .amount-box .aval{font-size:14px;font-weight:700;}
+  .amount-box.w{background:var(--green-bg);} .amount-box.w .alabel{color:#059669;} .amount-box.w .aval{color:var(--green-text);}
+  .amount-box.m{background:var(--red-bg);} .amount-box.m .alabel{color:#dc2626;} .amount-box.m .aval{color:var(--red-text);}
+  .amount-box.r{background:var(--blue-bg);} .amount-box.r .alabel{color:#3b82f6;} .amount-box.r .aval{color:var(--blue-text);}
+  .amount-box.r.neg{background:var(--red-bg);} .amount-box.r.neg .alabel{color:#dc2626;} .amount-box.r.neg .aval{color:var(--red-text);}
+
+  .report-bar{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;z-index:200;box-shadow:0 -2px 8px rgba(0,0,0,0.06);}
+  .btn-report{flex:1;padding:11px 6px;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+  .btn-preview{background:#eff6ff;color:#1e40af;}
+  .btn-pdf{background:#fef2f2;color:#991b1b;}
+  .btn-excel{background:#ecfdf5;color:#065f46;}
+
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;padding:20px;align-items:center;justify-content:center;}
+  .modal-overlay.show{display:flex;}
+  .modal-box{background:white;border-radius:16px;padding:20px;width:100%;max-width:420px;}
+  .modal-title{font-size:16px;font-weight:700;margin-bottom:16px;}
+  .modal-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .modal-btn-row{display:flex;gap:8px;margin-top:16px;}
+  .modal-btn{flex:1;padding:12px;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+  .modal-btn.confirm{background:var(--accent);color:white;}
+  .modal-btn.cancel{background:#f3f4f6;color:var(--muted);}
+
+  .del-amanah-btn{background:var(--red-bg);border:none;border-radius:8px;padding:6px 12px;color:var(--danger);font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer;margin-top:8px;}
+
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#111;color:white;padding:10px 20px;border-radius:20px;font-size:13px;opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap;z-index:999;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .loading{text-align:center;padding:30px;color:var(--muted);font-size:14px;}
+  .home-report-bar{padding:0 16px 16px;display:flex;gap:8px;}
+  .btn-full{width:100%;padding:13px;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+  .btn-summary{background:linear-gradient(135deg,#1a56db,#1e40af);color:white;}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="back-btn" id="back-btn" onclick="goHome()">→ رجوع</button>
+    <div>
+      <h1 id="header-title">💼 متابعة العهد</h1>
+      <p id="header-sub">إدارة عهد الأشخاص</p>
+    </div>
+  </div>
+  <div class="sync-dot" id="sync-dot"></div>
+</header>
+
+<!-- HOME SCREEN -->
+<div class="screen active" id="screen-home">
+  <div class="home-summary">
+    <div class="sum-card green"><div class="label">إجمالي الوارد</div><div class="value" id="h-warid">0</div></div>
+    <div class="sum-card red"><div class="label">إجمالي المنصرف</div><div class="value" id="h-masruf">0</div></div>
+    <div class="sum-card blue" style="grid-column:span 2;"><div class="label">الرصيد الكلي</div><div class="value" id="h-rasid">0</div></div>
+  </div>
+
+  <div class="amanat-list" id="amanat-list">
+    <div class="loading">جاري التحميل...</div>
+  </div>
+
+  <div style="height:16px;"></div>
+  <div class="home-report-bar">
+    <button class="btn-full btn-summary" onclick="openSummaryReportModal()">📊 تقرير إجمالي لكل العهد</button>
+  </div>
+  <div class="add-amanah-card">
+    <h2>+ إضافة عهدة جديدة</h2>
+    <div class="field">
+      <label>اسم صاحب العهدة</label>
+      <input type="text" id="new-amanah-name" placeholder="مثال: أحمد، محمد، المشروع...">
+    </div>
+    <button class="btn-primary" onclick="addAmanah()">إضافة العهدة</button>
+  </div>
+</div>
+
+<!-- DETAIL SCREEN -->
+<div class="screen" id="screen-detail">
+  <div class="detail-summary">
+    <div class="sum-card green"><div class="label">وارد</div><div class="value" id="d-warid">0</div></div>
+    <div class="sum-card red"><div class="label">منصرف</div><div class="value" id="d-masruf">0</div></div>
+    <div class="sum-card blue"><div class="label">الرصيد</div><div class="value" id="d-rasid">0</div></div>
+  </div>
+
+  <div class="form-card" id="form-card">
+    <h2 id="form-title">إضافة قيد جديد</h2>
+    <div class="form-row full">
+      <div class="field"><label>البيان</label><input type="text" id="inp-bayan" placeholder="مثال: استلام مصاريف، دفع فاتورة..."></div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>التاريخ</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="inp-date" style="flex:1;">
+          <button class="btn-today" onclick="setToday()">اليوم</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>النوع</label>
+        <select id="inp-type-sel">
+          <option value="warid">وارد ↓</option>
+          <option value="masruf">منصرف ↑</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="field"><label>المبلغ</label><input type="number" id="inp-amount" placeholder="0.00" min="0" step="0.01" inputmode="decimal"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-add" id="btn-submit" onclick="submitEntry()">+ إضافة القيد</button>
+      <button class="btn-cancel-edit" id="btn-cancel" onclick="cancelEdit()" style="display:none;">إلغاء</button>
+    </div>
+  </div>
+
+  <div class="entries-section">
+    <h2>القيود المسجّلة</h2>
+    <div id="entries-list"><div class="loading">جاري التحميل...</div></div>
+  </div>
+
+  <div class="report-bar">
+    <button class="btn-report btn-preview" onclick="openReportModal('preview')">👁️ معاينة</button>
+    <button class="btn-report btn-pdf" onclick="openReportModal('pdf')">📄 PDF</button>
+    <button class="btn-report btn-excel" onclick="openReportModal('excel')">📊 Excel</button>
+  </div>
+</div>
+
+<!-- SUMMARY REPORT MODAL -->
+<div class="modal-overlay" id="summary-modal">
+  <div class="modal-box">
+    <div class="modal-title">📊 تقرير إجمالي لكل العهد</div>
+    <div class="modal-row">
+      <div class="field"><label>من تاريخ</label><input type="date" id="sum-from"></div>
+      <div class="field"><label>إلى تاريخ</label><input type="date" id="sum-to"></div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div class="field"><label>نوع التقرير</label>
+        <select id="sum-type">
+          <option value="preview">👁️ معاينة</option>
+          <option value="pdf">📄 PDF</option>
+          <option value="excel">📊 Excel</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-btn-row">
+      <button class="modal-btn confirm" onclick="generateSummaryReport()">توليد التقرير</button>
+      <button class="modal-btn cancel" onclick="document.getElementById('summary-modal').classList.remove('show')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal-box">
+    <div class="modal-title">📋 تقرير كشف الحساب</div>
+    <div class="modal-row">
+      <div class="field"><label>من تاريخ</label><input type="date" id="rep-from"></div>
+      <div class="field"><label>إلى تاريخ</label><input type="date" id="rep-to"></div>
+    </div>
+    <div class="modal-btn-row">
+      <button class="modal-btn confirm" id="modal-confirm-btn" onclick="generateReport()">توليد التقرير</button>
+      <button class="modal-btn cancel" onclick="closeReportModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAv01Ei-JzWezGtCM7jhiZsxbeBhDTgCKo",
+  authDomain: "amanah-f5ff0.firebaseapp.com",
+  projectId: "amanah-f5ff0",
+  storageBucket: "amanah-f5ff0.firebasestorage.app",
+  messagingSenderId: "978704064026",
+  appId: "1:978704064026:web:6045182ea94cf3442fbba3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let currentAmanahId = null;
+let currentAmanahName = '';
+let editingId = null;
+let reportMode = 'preview';
+let entriesUnsub = null;
+let amanatUnsub = null;
+let allAmanat = [];
+
+// ===== UTILS =====
+function fmt(n){ return Number(n).toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(d){ return d?d.split('-').reverse().join('/'):''; }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+window.setToday = ()=>{ document.getElementById('inp-date').value=new Date().toISOString().slice(0,10); };
+
+// ===== HOME =====
+function loadHome(){
+  const col = collection(db,'amanat');
+  const q = query(col, orderBy('createdAt','asc'));
+  if(amanatUnsub) amanatUnsub();
+  amanatUnsub = onSnapshot(q, snap=>{
+    document.getElementById('sync-dot').className='sync-dot green';
+    allAmanat = snap.docs.map(d=>({id:d.id,...d.data(),entries:[]}));
+    renderHome();
+  }, ()=>{ document.getElementById('sync-dot').className='sync-dot'; });
+}
+
+async function renderHome(){
+  const list = document.getElementById('amanat-list');
+  if(!allAmanat.length){
+    list.innerHTML='<div class="empty">لا توجد عهد بعد — أضف أول عهدة من الأسفل</div>';
+    document.getElementById('h-warid').textContent='0';
+    document.getElementById('h-masruf').textContent='0';
+    document.getElementById('h-rasid').textContent='0';
+    return;
+  }
+
+  // load entries for each amanah for summary
+  let totalW=0, totalM=0;
+  const cards = await Promise.all(allAmanat.map(async a=>{
+    const snap = await getDocs(collection(db,'amanat',a.id,'entries'));
+    let w=0,m=0;
+    snap.forEach(d=>{ const e=d.data(); if(e.type==='warid') w+=e.amount; else m+=e.amount; });
+    totalW+=w; totalM+=m;
+    const bal=w-m;
+    return `<div class="amanah-card">
+      <div style="display:flex;align-items:center;flex:1;cursor:pointer;" onclick="openAmanah('${a.id}','${a.name}')">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--blue-text);margin-left:12px;flex-shrink:0;">${a.name.charAt(0)}</div>
+        <div>
+          <div class="amanah-name">${a.name}</div>
+          <div class="amanah-meta">${snap.size} قيد</div>
+        </div>
+      </div>
+      <div class="amanah-rasid" style="cursor:pointer;" onclick="openAmanah('${a.id}','${a.name}')">
+        <div class="rlabel">الرصيد</div>
+        <div class="rval ${bal>=0?'pos':'neg'}">${fmt(bal)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-right:8px;">
+        <button onclick="event.stopPropagation();renameAmanah('${a.id}','${a.name}')" style="background:var(--blue-bg);border:none;border-radius:7px;padding:5px 9px;color:var(--blue-text);font-size:14px;cursor:pointer;">✏️</button>
+        <button onclick="event.stopPropagation();deleteAmanah('${a.id}','${a.name}')" style="background:var(--red-bg);border:none;border-radius:7px;padding:5px 9px;color:var(--danger);font-size:14px;cursor:pointer;">🗑</button>
+      </div>
+    </div>`;
+  }));
+
+  list.innerHTML = cards.join('');
+  document.getElementById('h-warid').textContent = fmt(totalW);
+  document.getElementById('h-masruf').textContent = fmt(totalM);
+  const rasidEl = document.getElementById('h-rasid');
+  const net = totalW-totalM;
+  rasidEl.textContent = fmt(net);
+  rasidEl.style.color = net>=0 ? 'var(--blue-text)' : 'var(--red-text)';
+}
+
+window.addAmanah = async function(){
+  const name = document.getElementById('new-amanah-name').value.trim();
+  if(!name){ showToast('⚠️ اكتب اسم العهدة'); return; }
+  try{
+    await addDoc(collection(db,'amanat'),{name, createdAt:serverTimestamp()});
+    document.getElementById('new-amanah-name').value='';
+    showToast('✅ تم إضافة العهدة');
+  }catch(e){ showToast('❌ خطأ في الحفظ'); }
+};
+
+// ===== NAVIGATION =====
+window.openAmanah = function(id, name){
+  currentAmanahId = id;
+  currentAmanahName = name;
+  editingId = null;
+  document.getElementById('screen-home').classList.remove('active');
+  document.getElementById('screen-detail').classList.add('active');
+  document.getElementById('header-title').textContent = '💼 '+name;
+  document.getElementById('header-sub').textContent = 'كشف العهدة';
+  document.getElementById('back-btn').style.display='block';
+  document.getElementById('form-title').textContent='إضافة قيد جديد';
+  document.getElementById('btn-submit').textContent='+ إضافة القيد';
+  document.getElementById('btn-cancel').style.display='none';
+  setToday();
+  loadEntries(id);
+};
+
+window.goHome = function(){
+  if(entriesUnsub){ entriesUnsub(); entriesUnsub=null; }
+  currentAmanahId=null;
+  document.getElementById('screen-detail').classList.remove('active');
+  document.getElementById('screen-home').classList.add('active');
+  document.getElementById('header-title').textContent='💼 متابعة العهد';
+  document.getElementById('header-sub').textContent='إدارة عهد الأشخاص';
+  document.getElementById('back-btn').style.display='none';
+  renderHome();
+};
+
+// ===== ENTRIES =====
+function loadEntries(amanahId){
+  const col = collection(db,'amanat',amanahId,'entries');
+  const q = query(col, orderBy('createdAt','asc'));
+  if(entriesUnsub) entriesUnsub();
+  entriesUnsub = onSnapshot(q, snap=>{
+    const entries = snap.docs.map(d=>({id:d.id,...d.data()}));
+    window._entries = entries;
+    renderEntries(entries);
+  });
+}
+
+function renderEntries(entries){
+  let totalW=0,totalM=0;
+  entries.forEach(e=>{ if(e.type==='warid') totalW+=e.amount; else totalM+=e.amount; });
+  const bal=totalW-totalM;
+  document.getElementById('d-warid').textContent=fmt(totalW);
+  document.getElementById('d-masruf').textContent=fmt(totalM);
+  const dRasid=document.getElementById('d-rasid');
+  dRasid.textContent=fmt(bal);
+  dRasid.closest('.sum-card').className='sum-card '+(bal>=0?'blue':'red');
+
+  const list=document.getElementById('entries-list');
+  if(!entries.length){
+    list.innerHTML='<div class="empty">لا توجد قيود بعد</div>';
+    return;
+  }
+  let running=0;
+  const sorted=[...entries].sort((a,b)=>a.date.localeCompare(b.date));
+  list.innerHTML=sorted.map(e=>{
+    running+=e.type==='warid'?e.amount:-e.amount;
+    return `<div class="entry-card${editingId===e.id?' editing':''}">
+      <div class="entry-top">
+        <div><div class="entry-bayan">${e.bayan}</div><div class="entry-date">${fmtDate(e.date)}</div></div>
+        <div class="entry-actions">
+          <button class="btn-edit-e" onclick="editEntry('${e.id}')">✏️</button>
+          <button class="btn-del" onclick="delEntry('${e.id}')">🗑</button>
+        </div>
+      </div>
+      <div class="entry-amounts">
+        <div class="amount-box w"><div class="alabel">وارد</div><div class="aval">${e.type==='warid'?fmt(e.amount):'—'}</div></div>
+        <div class="amount-box m"><div class="alabel">منصرف</div><div class="aval">${e.type==='masruf'?fmt(e.amount):'—'}</div></div>
+        <div class="amount-box r${running<0?' neg':''}"><div class="alabel">الرصيد</div><div class="aval">${fmt(running)}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.submitEntry = async function(){
+  const bayan=document.getElementById('inp-bayan').value.trim();
+  const date=document.getElementById('inp-date').value;
+  const type=document.getElementById('inp-type-sel').value;
+  const amount=parseFloat(document.getElementById('inp-amount').value);
+  if(!bayan){showToast('⚠️ اكتب البيان أولاً');return;}
+  if(!date){showToast('⚠️ اختر التاريخ');return;}
+  if(!amount||amount<=0){showToast('⚠️ أدخل مبلغ صحيح');return;}
+  try{
+    const col=collection(db,'amanat',currentAmanahId,'entries');
+    if(editingId){
+      await updateDoc(doc(db,'amanat',currentAmanahId,'entries',editingId),{bayan,date,type,amount});
+      showToast('✅ تم التعديل'); cancelEdit();
+    } else {
+      await addDoc(col,{bayan,date,type,amount,createdAt:serverTimestamp()});
+      showToast('✅ تم إضافة القيد');
+      document.getElementById('inp-bayan').value='';
+      document.getElementById('inp-amount').value='';
+      setToday();
+    }
+  }catch(e){showToast('❌ خطأ في الحفظ');}
+};
+
+window.editEntry = function(id){
+  const entry=(window._entries||[]).find(e=>e.id===id);
+  if(!entry) return;
+  editingId=id;
+  document.getElementById('inp-bayan').value=entry.bayan;
+  document.getElementById('inp-date').value=entry.date;
+  document.getElementById('inp-type-sel').value=entry.type;
+  document.getElementById('inp-amount').value=entry.amount;
+  document.getElementById('form-title').textContent='تعديل القيد ✏️';
+  document.getElementById('btn-submit').textContent='حفظ التعديل';
+  document.getElementById('btn-cancel').style.display='block';
+  document.getElementById('form-card').scrollIntoView({behavior:'smooth'});
+};
+
+window.cancelEdit = function(){
+  editingId=null;
+  document.getElementById('inp-bayan').value='';
+  document.getElementById('inp-amount').value='';
+  setToday();
+  document.getElementById('inp-type-sel').value='warid';
+  document.getElementById('form-title').textContent='إضافة قيد جديد';
+  document.getElementById('btn-submit').textContent='+ إضافة القيد';
+  document.getElementById('btn-cancel').style.display='none';
+};
+
+window.delEntry = async function(id){
+  if(!confirm('هل تريد حذف هذا القيد؟')) return;
+  try{ await deleteDoc(doc(db,'amanat',currentAmanahId,'entries',id)); showToast('🗑️ تم الحذف'); }
+  catch(e){showToast('❌ خطأ');}
+};
+
+// ===== REPORT =====
+window.openReportModal = function(mode){
+  reportMode=mode;
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('rep-from').value=today.slice(0,8)+'01';
+  document.getElementById('rep-to').value=today;
+  const labels={preview:'👁️ معاينة التقرير',pdf:'📄 تصدير PDF',excel:'📊 تصدير Excel'};
+  document.getElementById('modal-confirm-btn').textContent=labels[mode];
+  document.getElementById('report-modal').classList.add('show');
+};
+
+window.closeReportModal = function(){ document.getElementById('report-modal').classList.remove('show'); };
+
+window.generateReport = function(){
+  const from=document.getElementById('rep-from').value;
+  const to=document.getElementById('rep-to').value;
+  if(!from||!to){showToast('⚠️ اختر الفترة');return;}
+  const entries=(window._entries||[]).filter(e=>e.date>=from&&e.date<=to).sort((a,b)=>a.date.localeCompare(b.date));
+  closeReportModal();
+  if(reportMode==='excel'){exportExcel(entries,from,to);return;}
+  buildPrintHTML(entries,from,to,reportMode);
+};
+
+function buildPrintHTML(entries,from,to,mode){
+  let running=0,totalW=0,totalM=0;
+  const rows=entries.map(e=>{
+    running+=e.type==='warid'?e.amount:-e.amount;
+    if(e.type==='warid') totalW+=e.amount; else totalM+=e.amount;
+    return `<tr><td>${fmtDate(e.date)}</td><td>${e.bayan}</td>
+      <td style="color:#065f46;font-weight:600;">${e.type==='warid'?fmt(e.amount):'—'}</td>
+      <td style="color:#991b1b;font-weight:600;">${e.type==='masruf'?fmt(e.amount):'—'}</td>
+      <td style="color:${running>=0?'#1e40af':'#991b1b'};font-weight:600;">${fmt(running)}</td></tr>`;
+  }).join('');
+
+  const html=`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Cairo',sans-serif;background:#f0f0ec;padding:30px;direction:rtl;}
+.page{background:white;max-width:700px;margin:0 auto;padding:36px 40px;border-radius:10px;}
+.hdr{border-bottom:3px solid #1a56db;padding-bottom:18px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:flex-start;}
+.hdr h1{font-size:22px;font-weight:700;color:#1a56db;}.hdr h2{font-size:14px;color:#6b7280;margin-top:3px;}
+.hdr-left{text-align:left;font-size:12px;color:#6b7280;line-height:1.8;}
+.period{background:#eff6ff;border-radius:8px;padding:10px 16px;margin-bottom:20px;font-size:13px;color:#1e40af;display:flex;gap:24px;}
+.period span{font-weight:700;}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;}
+th{background:#1a56db;color:white;padding:9px 12px;font-weight:600;text-align:right;font-size:12px;}
+td{padding:8px 12px;border-bottom:0.5px solid #e5e7eb;color:#374151;text-align:right;}
+tr:nth-child(even) td{background:#f9fafb;}
+.totals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;border-top:2px solid #1a56db;padding-top:16px;}
+.tot{background:#f9fafb;border-radius:8px;padding:12px;text-align:center;border:0.5px solid #e5e7eb;}
+.tot .lbl{font-size:11px;color:#6b7280;margin-bottom:4px;}.tot .val{font-size:16px;font-weight:700;}
+.stamp{text-align:center;margin-top:20px;font-size:11px;color:#9ca3af;}
+.no-data{text-align:center;padding:40px;color:#9ca3af;}
+@media print{body{background:white;padding:0;}.page{box-shadow:none;border-radius:0;}.no-print{display:none;}}
+</style></head><body><div class="page">
+<div class="hdr">
+  <div><h1>💼 كشف حساب العهدة</h1><h2>${currentAmanahName}</h2></div>
+  <div class="hdr-left"><div>تاريخ الطباعة</div><div style="font-weight:700;color:#374151;">${fmtDate(new Date().toISOString().slice(0,10))}</div></div>
+</div>
+<div class="period">
+  <div>من: <span>${fmtDate(from)}</span></div>
+  <div>إلى: <span>${fmtDate(to)}</span></div>
+  <div>عدد القيود: <span>${entries.length}</span></div>
+</div>
+${entries.length===0?'<div class="no-data">لا توجد قيود في هذه الفترة</div>':`
+<table><thead><tr><th>التاريخ</th><th>البيان</th><th>وارد</th><th>منصرف</th><th>الرصيد</th></tr></thead>
+<tbody>${rows}</tbody></table>
+<div class="totals">
+  <div class="tot"><div class="lbl">إجمالي الوارد</div><div class="val" style="color:#065f46;">${fmt(totalW)}</div></div>
+  <div class="tot"><div class="lbl">إجمالي المنصرف</div><div class="val" style="color:#991b1b;">${fmt(totalM)}</div></div>
+  <div class="tot"><div class="lbl">الرصيد الختامي</div><div class="val" style="color:${(totalW-totalM)>=0?'#1e40af':'#991b1b'};">${fmt(totalW-totalM)}</div></div>
+</div>`}
+<div class="stamp">تم إنشاء هذا الكشف بواسطة تطبيق متابعة العهد</div>
+${mode==='pdf'?'<div class="no-print" style="text-align:center;margin-top:20px;"><button onclick="window.print()" style="padding:12px 30px;background:#1a56db;color:white;border:none;border-radius:10px;font-family:Cairo,sans-serif;font-size:15px;font-weight:600;cursor:pointer;">طباعة / حفظ PDF</button></div>':''}
+</div></body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+}
+
+function exportExcel(entries,from,to){
+  if(!window.XLSX){showToast('⚠️ حاول تاني');return;}
+  let running=0,totalW=0,totalM=0;
+  const data=[['التاريخ','البيان','وارد','منصرف','الرصيد']];
+  entries.forEach(e=>{
+    running+=e.type==='warid'?e.amount:-e.amount;
+    if(e.type==='warid') totalW+=e.amount; else totalM+=e.amount;
+    data.push([fmtDate(e.date),e.bayan,e.type==='warid'?e.amount:0,e.type==='masruf'?e.amount:0,running]);
+  });
+  data.push([],['','الإجمالي',totalW,totalM,totalW-totalM]);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:12},{wch:30},{wch:14},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws,'كشف '+currentAmanahName);
+  XLSX.writeFile(wb,`كشف_${currentAmanahName}_${from}_${to}.xlsx`);
+  showToast('✅ تم تصدير Excel');
+}
+
+
+window.renameAmanah = async function(id, oldName){
+  const newName = prompt('اسم جديد للعهدة:', oldName);
+  if(!newName || newName.trim()==='' || newName.trim()===oldName) return;
+  try{
+    await updateDoc(doc(db,'amanat',id),{name:newName.trim()});
+    showToast('✅ تم تغيير الاسم');
+  }catch(e){showToast('❌ خطأ');}
+};
+
+window.deleteAmanah = async function(id, name){
+  if(!confirm('هل تريد حذف عهدة "'+name+'" وكل قيودها؟\nالحذف نهائي ولا يمكن التراجع!')) return;
+  try{
+    const entriesSnap = await getDocs(collection(db,'amanat',id,'entries'));
+    const delPromises = entriesSnap.docs.map(d=>deleteDoc(doc(db,'amanat',id,'entries',d.id)));
+    await Promise.all(delPromises);
+    await deleteDoc(doc(db,'amanat',id));
+    showToast('🗑️ تم حذف العهدة');
+  }catch(e){showToast('❌ خطأ في الحذف');}
+};
+
+// ===== SUMMARY REPORT =====
+window.openSummaryReportModal = function(){
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('sum-from').value = today.slice(0,8)+'01';
+  document.getElementById('sum-to').value = today;
+  document.getElementById('summary-modal').classList.add('show');
+};
+
+window.generateSummaryReport = async function(){
+  const from = document.getElementById('sum-from').value;
+  const to = document.getElementById('sum-to').value;
+  const mode = document.getElementById('sum-type').value;
+  if(!from||!to){showToast('⚠️ اختر الفترة');return;}
+  document.getElementById('summary-modal').classList.remove('show');
+  showToast('⏳ جاري تجميع البيانات...');
+
+  const amanatSnap = await getDocs(query(collection(db,'amanat'),orderBy('createdAt','asc')));
+  const results = await Promise.all(amanatSnap.docs.map(async d=>{
+    const a = {id:d.id,...d.data()};
+    const entriesSnap = await getDocs(collection(db,'amanat',a.id,'entries'));
+    let totalW=0,totalM=0;
+    const entries=[];
+    entriesSnap.forEach(e=>{
+      const data=e.data();
+      if(data.date>=from&&data.date<=to){
+        if(data.type==='warid') totalW+=data.amount; else totalM+=data.amount;
+        entries.push(data);
+      }
+    });
+    return {name:a.name,totalW,totalM,bal:totalW-totalM,count:entries.length};
+  }));
+
+  if(mode==='excel'){buildSummaryExcel(results,from,to);return;}
+  buildSummaryHTML(results,from,to,mode);
+};
+
+function buildSummaryHTML(results,from,to,mode){
+  let grandW=0,grandM=0;
+  results.forEach(r=>{grandW+=r.totalW;grandM+=r.totalM;});
+  const grandBal=grandW-grandM;
+
+  const rows=results.map((r,i)=>`<tr>
+    <td style="font-weight:600;">${i+1}</td>
+    <td style="font-weight:700;">${r.name}</td>
+    <td style="color:#065f46;font-weight:600;">${fmt(r.totalW)}</td>
+    <td style="color:#991b1b;font-weight:600;">${fmt(r.totalM)}</td>
+    <td style="color:${r.bal>=0?'#1e40af':'#991b1b'};font-weight:700;">${fmt(r.bal)}</td>
+    <td style="color:#6b7280;">${r.count}</td>
+  </tr>`).join('');
+
+  const html=`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Cairo',sans-serif;background:#f0f0ec;padding:30px;direction:rtl;}
+.page{background:white;max-width:750px;margin:0 auto;padding:36px 40px;border-radius:10px;}
+.hdr{border-bottom:3px solid #1a56db;padding-bottom:18px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:flex-start;}
+.hdr h1{font-size:22px;font-weight:700;color:#1a56db;}.hdr p{font-size:13px;color:#6b7280;margin-top:3px;}
+.hdr-left{text-align:left;font-size:12px;color:#6b7280;line-height:1.8;}
+.period{background:#eff6ff;border-radius:8px;padding:10px 16px;margin-bottom:20px;font-size:13px;color:#1e40af;display:flex;gap:24px;}
+.period span{font-weight:700;}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;}
+th{background:#1a56db;color:white;padding:9px 12px;font-weight:600;text-align:right;font-size:12px;}
+td{padding:9px 12px;border-bottom:0.5px solid #e5e7eb;color:#374151;text-align:right;}
+tr:nth-child(even) td{background:#f9fafb;}
+.grand{background:#1a56db!important;} .grand td{color:white!important;font-weight:700!important;font-size:14px;}
+.totals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;}
+.tot{background:#f9fafb;border-radius:8px;padding:14px;text-align:center;border:0.5px solid #e5e7eb;}
+.tot .lbl{font-size:11px;color:#6b7280;margin-bottom:4px;}.tot .val{font-size:18px;font-weight:700;}
+.stamp{text-align:center;margin-top:16px;font-size:11px;color:#9ca3af;}
+@media print{body{background:white;padding:0;}.page{box-shadow:none;border-radius:0;}.no-print{display:none;}}
+</style></head><body><div class="page">
+<div class="hdr">
+  <div><h1>📊 التقرير الإجمالي للعهد</h1><p>ملخص جميع العهد والأرصدة</p></div>
+  <div class="hdr-left"><div>تاريخ الطباعة</div><div style="font-weight:700;color:#374151;">${fmtDate(new Date().toISOString().slice(0,10))}</div></div>
+</div>
+<div class="period">
+  <div>من: <span>${fmtDate(from)}</span></div>
+  <div>إلى: <span>${fmtDate(to)}</span></div>
+  <div>عدد العهد: <span>${results.length}</span></div>
+</div>
+<div class="totals">
+  <div class="tot"><div class="lbl">إجمالي الوارد</div><div class="val" style="color:#065f46;">${fmt(grandW)}</div></div>
+  <div class="tot"><div class="lbl">إجمالي المنصرف</div><div class="val" style="color:#991b1b;">${fmt(grandM)}</div></div>
+  <div class="tot"><div class="lbl">الرصيد الكلي</div><div class="val" style="color:${grandBal>=0?'#1e40af':'#991b1b'};">${fmt(grandBal)}</div></div>
+</div>
+<table>
+  <thead><tr><th>#</th><th>اسم العهدة</th><th>وارد</th><th>منصرف</th><th>الرصيد</th><th>عدد القيود</th></tr></thead>
+  <tbody>
+    ${rows}
+    <tr class="grand">
+      <td colspan="2">الإجمالي الكلي</td>
+      <td>${fmt(grandW)}</td>
+      <td>${fmt(grandM)}</td>
+      <td>${fmt(grandBal)}</td>
+      <td>${results.reduce((s,r)=>s+r.count,0)}</td>
+    </tr>
+  </tbody>
+</table>
+<div class="stamp">تم إنشاء هذا التقرير بواسطة تطبيق متابعة العهد</div>
+${mode==='pdf'?'<div class="no-print" style="text-align:center;margin-top:20px;"><button onclick="window.print()" style="padding:12px 30px;background:#1a56db;color:white;border:none;border-radius:10px;font-family:Cairo,sans-serif;font-size:15px;font-weight:600;cursor:pointer;">طباعة / حفظ PDF</button></div>':''}
+</div></body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+}
+
+function buildSummaryExcel(results,from,to){
+  if(!window.XLSX){showToast('⚠️ حاول تاني');return;}
+  let grandW=0,grandM=0;
+  const data=[['#','اسم العهدة','وارد','منصرف','الرصيد','عدد القيود']];
+  results.forEach((r,i)=>{
+    grandW+=r.totalW; grandM+=r.totalM;
+    data.push([i+1,r.name,r.totalW,r.totalM,r.bal,r.count]);
+  });
+  data.push([]);
+  data.push(['','الإجمالي الكلي',grandW,grandM,grandW-grandM,results.reduce((s,r)=>s+r.count,0)]);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:5},{wch:25},{wch:15},{wch:15},{wch:15},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws,'التقرير الإجمالي');
+  XLSX.writeFile(wb,`تقرير_اجمالي_${from}_${to}.xlsx`);
+  showToast('✅ تم تصدير Excel');
+}
+
+// ===== INIT =====
+document.getElementById('inp-date').value=new Date().toISOString().slice(0,10);
+loadHome();
+</script>
+</body>
+</html>
